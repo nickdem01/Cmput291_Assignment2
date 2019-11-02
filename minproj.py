@@ -164,7 +164,128 @@ def registerMarriage():
 
 	cursor.execute('inset into marriages values (?, ?, ?, ?, ?, ?, ?);', (mregno, mregdate, mregplace, p1Fname, p1Lname, p2Fname, p2Lname))
 	conn.commit()
+
+
+def renew_vregistration():
+
+	vregno = input('Please enter the vehicles registration number')
+	today = datetime.date(datetime.now())
+
+	exp = None
+	while exp == None:
+		cursor.execute('select r.expiry from registrations r where r.regno = ?;', (vregno,))
+		exp = cursor.fetchone()
+		if exp = None:
+			vregno = input('Please enter a valid registration number')
+
+	currexp = exp.split('-')
+	ndate = today
+	ndate = ndate.replace(year = int(currexp[0]), month = currexp[1], day = currexp[2])
+	if today >= ndate:
+
+		ndate = ndate.replace(year = today.year + 1)
+
+	else:
+		
+		ndate = ndate.replace(year = ndate.year + 1)
+
+	ndate = ndate.strftime('%Y-%m-%d')
+
+	cursor.execute('update registrastions set regdate = ? where regno = ?;', (ndate,), (vregno,))
+	conn.commit()
+
+def sellCar():
+
+
+	
+	ofname = input('Please enter the first name of the old owner')
+	olname = input('Please enter the last name of the old owner')
+	nfname = input('Please enter the first name of the new owner')
+	nlname = input('Please enter the last name of the new owner')
+	cvin = input('Please enter the vin of the car')
+
+	cursor.execute('select * from registrations where vin = ?;', (cvin,))
+	check = cursor.fetchone()
+	if check == None:
+
+		print('Invalid vin')
+		return 0
+		
+	cursor.execute('select fname from registrations where vin = ? order by regdate DESC limit 1;', (cvin,))
+	cfname = cursor.fetchone()
+	
+	cursor.execute('select lname from registrations where vin = ? order by regdate DESC limit 1;', (cvin,))
+	clname = cursor.fetchone()
+
+	if cfname != ofname or clname != olname:
+
+		print('Invalid seller')
+		return 0
+		
+	
+	
+
+
+	nplate = input('Please enter the new plate number')
+
+	oexpdate = datetime.date(datetime.now())
+	nexpdate = oexpdate
+	nexpdate = nexpdate.replace( year = nexpdate.year + 1)
+	oexpdate = oexpdate.strftime('%Y-%m-%d')
+	nexpdate = nexpdate.strftime('%Y-%m-%d')
+	
+	cursor.execute('select regno from registrations where vin = ? order by regdate DESC limit 1;', (cvin,))
+	oregno = cursor.fetchone()
+
+	cursor.execute('update registrations set expiry = ? where regno = ?;', (oexpdate,), (oregno,))
+	
+	nregno = random.randint(100000, 999999)
+	cursor.execute('select * from registrations where regno = ?;', (nregno,))
+	check2 = cursor.fetchone()
+	
+	if check2 != None:
+		
+		while check2 != None:
+			nregno = random.randint(100000, 999999)
+			cursor.execute('select * from registrations where regno = ?;', (nregno,))
+			check2 = cusor.fetchone()
 			
+	
+	cursor.execute('insert into registrations values (?, ?, ?, ?, ?, ?, ?);', (nregno, oexpdate, nexpdate, nplate, cvin, nfname, nlname))
+	conn.commit() 
+
+
+def payment(cursor, conn):
+
+	ptno = input('Please enter the ticket number for the ticket that is being paid')
+	
+	cursor.execute('select fine from tickets where tno = ?;', (ptno,))
+	tfine = cursor.fetchone()
+
+	if tfine == None:
+
+		print('Invalid ticket number')
+		return 0	
+	
+	tfine = float(tfine)
+	
+	pamount = input('Please enter the ticket amount')
+
+	cursor.execute()#missing sql statement should collect a sum of payments with ptno my brain died and couldn't get it working :(
+	psum = cursor.fetchone()
+
+	if (pamount + psum) > tfine:
+	
+		pmax = tfine - psum
+		print('Invalid payment:too high max payment for this fine is ' + pmax)
+		return 0
+
+	pdate = datetime.date(datetime.now())
+	pdate = pdate.strftime('%Y-%m-%d')
+	
+	cursor.execute('insert into payments values (?, ?, ?,);', (ptno, pdate, pamount))
+	conn.commit()
+
 main():
 
 	
